@@ -4,53 +4,81 @@
 
 #struct is a built in module in python that provides functions for working with C-style data structures.
 
-from operator import length_hint
 import socket
 import struct
-from sys import flags
-from typing import Sequence
 
-from pyparsing import common_html_entity
 
+# =========================
+# FORMATTERS
+# =========================
 
 def format_mac(bytes_addr):
     return ':'.join(map('{:02x}'.format, bytes_addr))
-
-
-def ethernet_frame(data):
-    dest_mac, src_mac, proto = struct.unpack('!6s6sH', data[:14])
-
-    return (
-        format_mac(dest_mac),
-        format_mac(src_mac),
-        socket.htons(proto),  # convert to host byte order
-        data[14:]
-    )
 
 
 def ipv4(addr):
     return '.'.join(map(str, addr))
 
 
+def tcp_flags_to_string(
+    urg,
+    ack,
+    psh,
+    rst,
+    syn,
+    fin
+):
+    flags = []
+
+    if urg:
+        flags.append("URG")
+    if ack:
+        flags.append("ACK")
+    if psh:
+        flags.append("PSH")
+    if rst:
+        flags.append("RST")
+    if syn:
+        flags.append("SYN")
+    if fin:
+        flags.append("FIN")
+
+    return " ".join(flags)
+
+
+# =========================
+# ETHERNET
+# =========================
+
+def ethernet_frame(data):
+    dest_mac, src_mac, proto = struct.unpack(
+        '!6s6sH',
+        data[:14]
+    )
+
+    return (
+        format_mac(dest_mac),
+        format_mac(src_mac),
+        socket.htons(proto),
+        data[14:]
+    )
+
+
+# =========================
+# IPV4
+# =========================
+
 def ipv4_packet(data):
+
     version_header_length = data[0]
 
-    version = version_header_length >> 4 #jumping four bits to get the info version
+    version = version_header_length >> 4
     header_length = (version_header_length & 15) * 4
 
     ttl, proto, src, target = struct.unpack(
         '!8xBB2x4s4s',
         data[:20]
     )
-
-    # we jump eight bytes with !8
-    #Byte 0  -> Version/IHL
-    #Byte 1  -> DSCP
-    #Byte 2  -> Total Length
-    #Byte 4  -> Identification
-    #Byte 6  -> Flags/Fragment Offset
-    #Byte 8  -> TTL
-    #Byte 9  -> Protocol
 
     return (
         version,
@@ -63,28 +91,24 @@ def ipv4_packet(data):
     )
 
 
-# Create raw socket
-s = socket.socket(
-    socket.AF_PACKET, #gives us complete frames of network card
-    socket.SOCK_RAW, #gives us the raw data package
-    socket.ntohs(3) # ¨3¨ is basically ordering ¨capture all protocols ethernet
-)
-
-print("[+] Escutando pacotes...\n")
-
-
-#parser TCP
+# =========================
+# TCP
+# =========================
 
 def tcp_segment(data):
+
     (
         src_port,
         dest_port,
         sequence,
         acknowledgment,
         offset_reserved_flags
-    ) = struct.unpack('!HHLLH', data[:14])
+    ) = struct.unpack(
+        '!HHLLH',
+        data[:14]
+    )
 
-    offset = (offset_reserved_flags >>12) * 4
+    offset = (offset_reserved_flags >> 12) * 4
 
     flag_urg = (offset_reserved_flags & 32) >> 5
     flag_ack = (offset_reserved_flags & 16) >> 4
@@ -108,10 +132,61 @@ def tcp_segment(data):
     )
 
 
+# =========================
+# UDP
+# =========================
 
+def udp_segment(data):
+
+    src_port, dest_port, length, checksum = struct.unpack(
+        '!HHHH',
+        data[:8]
+    )
+
+    return (
+        src_port,
+        dest_port,
+        length,
+        checksum,
+        data[8:]
+    )
+
+
+# =========================
+# COMMON PORTS
+# =========================
+
+COMMON_PORTS = {
+    80: "HTTP",
+    443: "HTTPS",
+    53: "DNS",
+    22: "SSH",
+    25: "SMTP",
+    110: "POP3",
+    143: "IMAP"
+}
+
+
+# =========================
+# RAW SOCKET
+# =========================
+
+s = socket.socket(
+    socket.AF_PACKET,
+    socket.SOCK_RAW,
+    socket.ntohs(3)
+)
+
+print("[+] Escutando pacotes...\n")
+
+
+# =========================
+# MAIN LOOP
+# =========================
 
 while True:
-    raw_data, addr = s.recvfrom(65535) #receive from, actually waits the data on the socket, take it and return to who sent. 65535 is 2^16 - 1 same as 16 bits.
+
+    raw_data, addr = s.recvfrom(65535)
 
     dest_mac, src_mac, eth_proto, data = ethernet_frame(raw_data)
 
@@ -121,13 +196,17 @@ while True:
     print("Proto  :", eth_proto)
 
     # IPv4
-
-
-
-
     if eth_proto == 8:
 
-        version, header_length, ttl, proto, src, target, data = ipv4_packet(data)
+        (
+            version,
+            header_length,
+            ttl,
+            proto,
+            src,
+            target,
+            data
+        ) = ipv4_packet(data)
 
         print("\n[IPv4 PACKET]")
         print("Version:", version)
@@ -137,6 +216,7 @@ while True:
         print("Source:", src)
         print("Target:", target)
 
+        # TCP
         if proto == 6:
 
             (
@@ -153,99 +233,56 @@ while True:
                 data
             ) = tcp_segment(data)
 
+            service = COMMON_PORTS.get(
+                dest_port,
+                "UNKNOWN"
+            )
+
             print("\n[TCP SEGMENT]")
             print("Source Port:", src_port)
-            print("Destination Port:", dest_port)
+            print(
+                f"Destination Port: {dest_port} ({service})"
+            )
             print("Sequence:", sequence)
             print("Acknowledgment:", acknowledgment)
 
-            print("URG:", flag_urg)
-            print("ACK:", flag_ack)
-            print("PSH:", flag_psh)
-            print("RST:", flag_rst)
-            print("SYN:", flag_syn)
-            print("FIN:", flag_fin)
+            print(
+                "Flags:",
+                tcp_flags_to_string(
+                    flag_urg,
+                    flag_ack,
+                    flag_psh,
+                    flag_rst,
+                    flag_syn,
+                    flag_fin
+                )
+            )
 
-    def tcp_flags_to_string(
-            urg,
-            ack,
-            psh,
-            rst,
-            syn,
-            fin
-    ):
-        flags = []
+        # UDP
+        elif proto == 17:
 
-        if urg:
-            flags.append("URG")
-        if ack:
-            flags.append("ACK")
-        if psh:
-            flags.append("PSH")
-        if rst:
-            flags.append("RST")
-        if syn:
-            flags.append("SYN")
-        if fin:
-            flags.append("FIN")
+            (
+                src_port,
+                dest_port,
+                length,
+                checksum,
+                data
+            ) = udp_segment(data)
 
-        return " ".join(flags)
+            service = COMMON_PORTS.get(
+                dest_port,
+                "UNKNOWN"
+            )
 
-    print("Flags:", tcp_flags_to_string(
-    flag_urg,
-    flag_ack,
-    flag_psh,
-    flag_rst,
-    flag_syn,
-    flag_fin
-))
+            print("\n[UDP SEGMENT]")
+            print("Source Port:", src_port)
+            print(
+                f"Destination Port: {dest_port} ({service})"
+            )
+            print("Length:", length)
 
-        #dictionary of common ports
-
-    common_ports = {
-
-        80: "HTTP",
-        443: "HTTPS",
-        53: "DNS",
-        22: "SSH",
-        25: "SMTP",
-        110: "POP3",
-        143: "IMAP"
-}
-    service = common_ports.get(dest_port, "UNKNOWN")
-
-    print(f"Destination Port: {dest_port} ({service})")
-
-    #func UDP
-
-    def udp_segment(data):
-     src_port, dest_port, length, checksum = struct,unpack(
-            '!HHHH',
-            data[:8]
-        )
-
-     return (
-            src_port,
-            dest_port,
-            length,
-            checksum,
-            data[8:]
-        )
-
-    if proto == 17:
-
-         (
-        src_port,
-        dest_port,
-        length,
-        checksum,
-        data,
-    ) = udp_segment(data)
-
-    print("\n[UDP SEGMENT]")
-    print("Source Port:", src_port)
-    print("Destination Port:", dest_port)
-    print("Length:", length)
+            if src_port == 53 or dest_port == 53:
+                print("[DNS TRAFFIC DETECTED]")
 #1  -> ICMP
 #6  -> TCP
 #17 -> UDP
