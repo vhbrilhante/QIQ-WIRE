@@ -1,4 +1,4 @@
-# sudo /usr/bin/python3 /home/victor-hugo/projects/QIQ_WIRE/main.py -- This code is a simple packet sniffer that captures Ethernet frames and displays their destination MAC address, source MAC address, and protocol type. It uses raw sockets to listen for incoming packets on the network interface. The `format_mac` function converts the raw bytes of the MAC address into a human-readable format, while the `ethernet_frame` function unpacks the Ethernet frame and extracts the relevant information. The program runs indefinitely, printing the details of each captured Ethernet frame to the console.
+# sudo /usr/bin/python3 /home/victor-hugo/projects/QIQ_WIRE/sniffer/main.py -- This code is a simple packet sniffer that captures Ethernet frames and displays their destination MAC address, source MAC address, and protocol type. It uses raw sockets to listen for incoming packets on the network interface. The `format_mac` function converts the raw bytes of the MAC address into a human-readable format, while the `ethernet_frame` function unpacks the Ethernet frame and extracts the relevant information. The program runs indefinitely, printing the details of each captured Ethernet frame to the console.
 
 #socket is a built in module in python that provides low-level networking interfaces.
 
@@ -6,6 +6,7 @@
 
 import socket
 import struct
+from typing import Sequence
 
 
 def format_mac(bytes_addr):
@@ -68,6 +69,31 @@ s = socket.socket(
 print("[+] Escutando pacotes...\n")
 
 
+#parser TCP
+
+def tcp_segment(data):
+    (
+        src_port,
+        dest_port,
+        sequence,
+        acknowledgment,
+        offset_reserved_flags
+    ) = struct.unpack('!HHLLH', data[:14])
+
+    offset = (offset_reserved_flags >>12) * 4
+
+    return (
+        src_port,
+        dest_port,
+        sequence,
+        acknowledgment,
+        offset,
+        data[offset:]
+    )
+
+
+
+
 while True:
     raw_data, addr = s.recvfrom(65535) #receive from, actually waits the data on the socket, take it and return to who sent. 65535 is 2^16 - 1 same as 16 bits.
 
@@ -79,6 +105,24 @@ while True:
     print("Proto  :", eth_proto)
 
     # IPv4
+
+    if proto == 6:
+        (
+            src_port,
+            dest_port,
+            sequence,
+            acknowlegdment,
+            offset,
+            data,
+        ) = tcp_segment(data)
+
+    print("\n[TCP SEGMENT]")
+    print("Source Port:", src_port)
+    print("Destination Port:", dest_port)
+    print("Sequence:", sequence)
+    print("Acknowledgment:", acknowledgment)
+
+    
     if eth_proto == 8:
 
         version, header_length, ttl, proto, src, target, data = ipv4_packet(data)
@@ -90,6 +134,8 @@ while True:
         print("Protocol:", proto)
         print("Source:", src)
         print("Target:", target)
+
+
 
 #1  -> ICMP
 #6  -> TCP
