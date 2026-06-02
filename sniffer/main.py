@@ -143,6 +143,22 @@ def udp_segment(data):
         data[:8]
     )
 
+    if src_port ==  53 or dest_port == 53:
+        (
+            transaction_id,
+            flags,
+            questions,
+            answers,
+            authority,
+            additional,
+            dns_data,
+        ) = dns_header(data)
+    
+        print("\n[DNS]")
+        print("Transaction ID:", transaction_id)
+        print("Questions:", questions)
+        print("Answers:", answers)
+    
     return (
         src_port,
         dest_port,
@@ -150,7 +166,30 @@ def udp_segment(data):
         checksum,
         data[8:]
     )
+    
+#parser DNS
+def dns_header(data):
+    (
+        transaction_id,
+        flags,
+        questions,
+        answers,
+        authority,
+        additional,
+    ) = struct.unpack(
+        '!HHHHHH',
+        data[:12]
+    )
 
+    return (
+        transaction_id,
+        flags,
+        questions,
+        answers,
+        authority,
+        additional,
+        data[12:]
+    )
 
 # =========================
 # COMMON PORTS
@@ -180,9 +219,9 @@ s = socket.socket(
 print("[+] Escutando pacotes...\n")
 
 
-# =========================
+
 # MAIN LOOP
-# =========================
+
 
 while True:
 
@@ -283,6 +322,8 @@ while True:
 
             if src_port == 53 or dest_port == 53:
                 print("[DNS TRAFFIC DETECTED]")
+
+
 #1  -> ICMP
 #6  -> TCP
 #17 -> UDP
