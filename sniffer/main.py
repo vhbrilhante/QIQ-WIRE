@@ -4,6 +4,7 @@
 
 #struct is a built in module in python that provides functions for working with C-style data structures.
 
+from operator import length_hint
 import socket
 import struct
 from sys import flags
@@ -211,16 +212,40 @@ while True:
         110: "POP3",
         143: "IMAP"
 }
-        service = common_ports.get(dest_port, "UNKNOWN")
+    service = common_ports.get(dest_port, "UNKNOWN")
 
-        print(f"Destination Port: {dest_port} ({service})")
+    print(f"Destination Port: {dest_port} ({service})")
 
     #func UDP
 
-    
+    def udp_segment(data):
+     src_port, dest_port, length, checksum = struct,unpack(
+            '!HHHH',
+            data[:8]
+        )
 
+     return (
+            src_port,
+            dest_port,
+            length,
+            checksum,
+            data[8:]
+        )
 
+    if proto == 17:
 
+         (
+        src_port,
+        dest_port,
+        length,
+        checksum,
+        data,
+    ) = udp_segment(data)
+
+    print("\n[UDP SEGMENT]")
+    print("Source Port:", src_port)
+    print("Destination Port:", dest_port)
+    print("Length:", length)
 #1  -> ICMP
 #6  -> TCP
 #17 -> UDP
