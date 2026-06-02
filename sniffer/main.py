@@ -6,7 +6,10 @@
 
 import socket
 import struct
+from sys import flags
 from typing import Sequence
+
+from pyparsing import common_html_entity
 
 
 def format_mac(bytes_addr):
@@ -82,12 +85,24 @@ def tcp_segment(data):
 
     offset = (offset_reserved_flags >>12) * 4
 
+    flag_urg = (offset_reserved_flags & 32) >> 5
+    flag_ack = (offset_reserved_flags & 16) >> 4
+    flag_psh = (offset_reserved_flags & 8) >> 3
+    flag_rst = (offset_reserved_flags & 4) >> 2
+    flag_syn = (offset_reserved_flags & 2) >> 1
+    flag_fin = offset_reserved_flags & 1
+
     return (
         src_port,
         dest_port,
         sequence,
         acknowledgment,
-        offset,
+        flag_urg,
+        flag_ack,
+        flag_psh,
+        flag_rst,
+        flag_syn,
+        flag_fin,
         data[offset:]
     )
 
@@ -106,23 +121,9 @@ while True:
 
     # IPv4
 
-    if proto == 6:
-        (
-            src_port,
-            dest_port,
-            sequence,
-            acknowlegdment,
-            offset,
-            data,
-        ) = tcp_segment(data)
 
-    print("\n[TCP SEGMENT]")
-    print("Source Port:", src_port)
-    print("Destination Port:", dest_port)
-    print("Sequence:", sequence)
-    print("Acknowledgment:", acknowledgment)
 
-    
+
     if eth_proto == 8:
 
         version, header_length, ttl, proto, src, target, data = ipv4_packet(data)
@@ -134,6 +135,89 @@ while True:
         print("Protocol:", proto)
         print("Source:", src)
         print("Target:", target)
+
+        if proto == 6:
+
+            (
+                src_port,
+                dest_port,
+                sequence,
+                acknowledgment,
+                flag_urg,
+                flag_ack,
+                flag_psh,
+                flag_rst,
+                flag_syn,
+                flag_fin,
+                data
+            ) = tcp_segment(data)
+
+            print("\n[TCP SEGMENT]")
+            print("Source Port:", src_port)
+            print("Destination Port:", dest_port)
+            print("Sequence:", sequence)
+            print("Acknowledgment:", acknowledgment)
+
+            print("URG:", flag_urg)
+            print("ACK:", flag_ack)
+            print("PSH:", flag_psh)
+            print("RST:", flag_rst)
+            print("SYN:", flag_syn)
+            print("FIN:", flag_fin)
+
+    def tcp_flags_to_string(
+            urg,
+            ack,
+            psh,
+            rst,
+            syn,
+            fin
+    ):
+        flags = []
+
+        if urg:
+            flags.append("URG")
+        if ack:
+            flags.append("ACK")
+        if psh:
+            flags.append("PSH")
+        if rst:
+            flags.append("RST")
+        if syn:
+            flags.append("SYN")
+        if fin:
+            flags.append("FIN")
+
+        return " ".join(flags)
+
+    print("Flags:", tcp_flags_to_string(
+    flag_urg,
+    flag_ack,
+    flag_psh,
+    flag_rst,
+    flag_syn,
+    flag_fin
+))
+
+        #dictionary of common ports
+
+    common_ports = {
+
+        80: "HTTP",
+        443: "HTTPS",
+        53: "DNS",
+        22: "SSH",
+        25: "SMTP",
+        110: "POP3",
+        143: "IMAP"
+}
+        service = common_ports.get(dest_port, "UNKNOWN")
+
+        print(f"Destination Port: {dest_port} ({service})")
+
+    #func UDP
+
+    
 
 
 
