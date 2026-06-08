@@ -20,22 +20,24 @@ from parsers.dns import (
     dns_query_name,
     dns_question,
     DNS_TYPES,
-    is_dns_response
-
+    is_dns_response,
+    parse_dns_answer
 )
 
+
 from constants.ports import COMMON_PORTS
-
-
 DNS_ONLY = "--dns" in sys.argv
 TCP_ONLY = "--tcp" in sys.argv
 
+# initialize DNS counter once at module scope
+dns_counter = Counter()
 
 s = socket.socket(
     socket.AF_PACKET,
     socket.SOCK_RAW,
     socket.ntohs(3)
 )
+
 
 print("[+] Escutando pacotes...\n")
 
@@ -52,7 +54,7 @@ def show_stats(signum, frame):
     for domain, count in dns_counter.most_common(10):
         print(f"{count:4}x  {domain}")
 
-        sys.exit(0)
+    sys.exit(0)
 
 signal.signal(
     signal.SIGINT,
@@ -142,6 +144,7 @@ while True:
         )
 
     # UDP
+
     elif proto == 17:
 
         (
@@ -165,14 +168,6 @@ while True:
         print("Length:", length)
 
         # DNS
-    response = is_dns_response(flags)
-    
-    if response:
-        print("\n[DNS RESPONSE]")
-        else: 
-        print("\n[DNS QUERY]")
-
-
         if src_port == 53 or dest_port == 53:
 
             (
@@ -185,43 +180,55 @@ while True:
                 dns_data
             ) = dns_header(data)
 
+            # determine if this is a DNS response
+            response = is_dns_response(flags)
+
             print("\n[DNS]")
             print("Transaction ID:", transaction_id)
             print("Questions:", questions)
             print("Answers:", answers)
 
             try:
-                domain = dns_query_name(dns_data)
-                print("Domain:", domain)
+                (
+                    domain,
+                    qtype,
+                    qclass,
+                    answer_offset
+                ) = dns_question(dns_data)
 
-            except Exception:
-                pass
-            
-            domain, qtype, qclass, answer_offset = dns_question(dns_data)
+                dns_counter[domain] += 1
 
-            dns_counter[domain] += 1
+            except Exception as e:
+                print("Error parsing DNS data:", e)
+                continue
 
-            #if it's a response and have answers, try to parse the answer to get the resolved IP address
+            if response:
+                print("\n[DNS RESPONSE]")
+            else:
+                print("\n[DNS QUERY]")
 
-            if response: and answers > 0:
-
-                ip = parse_dns_answer(dns_data,
-                answer_offset
-                )
-
-                if ip:
-                    print("Resolved IP:", ip)
-
-                    #DNS counter
-
-                    dns_counter = Counter()
-            
-            print("\n[DNS QUERY]")
             print("Domain:", domain)
-            print("Type:", DNS_TYPES.get(qtype, f"UNKNOWN ({qtype})"))
+            print(
+                "Type:",
+                DNS_TYPES.get(
+                    qtype,
+                    f"UNKNOWN ({qtype})"
+                )
+            )
             print("Class:", qclass)
 
+            if response:
+                if answers > 0:
+                    ip = parse_dns_answer(
+                        dns_data,
+                        answer_offset
+                    )
 
+                    if ip:
+                        print("Resolved IP:", ip)
+                    else:
+                        print("Resolved IP: None or unsupported record type")
+                else:
+                    print("No DNS answers present in response.")
 
-
-
+                

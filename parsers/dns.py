@@ -1,3 +1,4 @@
+import socket
 import struct
 
 
@@ -49,10 +50,9 @@ def dns_query_name(data):
         )
 
         position += length
-        
-        domain = ".".join(labels)
 
-    return domain, position 
+    domain = ".".join(labels)
+    return domain, position
 
 def dns_question(data):
     
@@ -87,7 +87,7 @@ def parse_dns_answer(data, offset):
 
     (
         name,
-        rtytpe,
+        rtype,
         rclass,
         ttl,
         rdlenght
@@ -98,15 +98,13 @@ def parse_dns_answer(data, offset):
 
     offset += 12
 
-    if rtype == 1: and rdlenght == 4:
-        
+    if rtype == 1 and rdlenght == 4:
         ip = socket.inet_ntoa(
             data[offset:offset+4]
         )
-
         return ip
 
-        return None
+    return None
 
 DNS_TYPES = {
     1: "A",
