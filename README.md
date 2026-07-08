@@ -1,50 +1,50 @@
-# QIQ-WIRE
+# 🛰️ QIQ-WIRE
 
-> A packet sniffer built from scratch to understand how network protocols actually work.
+> **A packet sniffer built from scratch to understand how network protocols actually work.**
 
 QIQ-WIRE is an educational networking project written in Python with the goal of understanding how data moves through a network, one protocol at a time.
 
 Instead of relying on high-level networking libraries, this project manually parses packets using raw sockets, binary unpacking (`struct`), and bitwise operations. The idea is to progressively build a modular networking framework while learning how protocols interact at every layer.
 
-The project is currently Linux-only due to the limitations of raw sockets on Windows, but Windows support is planned for future releases.
+> 🐧 **Currently Linux-only.** Windows support is planned for future releases.
 
 ---
 
-## Why?
+# 🎯 Why?
 
 Most packet analyzers hide the interesting part: how packets are actually decoded.
 
 QIQ-WIRE was created to answer questions like:
 
-- How does an Ethernet frame become an IPv4 packet?
-- Where do TCP ports come from?
-- How does DNS translate a domain into an IP address?
-- What information is really traveling through the network?
+- 🌐 How does an Ethernet frame become an IPv4 packet?
+- 🔌 Where do TCP ports come from?
+- 📡 How does DNS translate a domain into an IP address?
+- 📦 What information is actually traveling through the network?
 
 Every parser in this project is implemented manually as a learning exercise.
 
 ---
 
-## Current Features
+# ✨ Current Features
 
-- Ethernet frame parser
-- IPv4 packet parser
-- TCP segment parser
-- UDP datagram parser
-- DNS packet parser
-- DNS query and response detection
-- DNS domain extraction
-- DNS response IP extraction
-- Live traffic statistics
-- Top DNS domains
-- Top IP addresses
-- Modular parser architecture
+- ✅ Ethernet frame parser
+- ✅ IPv4 packet parser
+- ✅ TCP segment parser
+- ✅ UDP datagram parser
+- ✅ DNS packet parser
+- ✅ DNS query & response detection
+- ✅ DNS domain extraction
+- ✅ DNS response IP extraction
+- ✅ Live traffic statistics
+- ✅ Top DNS domains
+- ✅ Top IP addresses
+- ✅ Modular parser architecture
 
 ---
 
-## Project Structure
+# 📁 Project Structure
 
-```
+```text
 QIQ-WIRE/
 │
 ├── main.py
@@ -67,7 +67,7 @@ QIQ-WIRE/
 
 ---
 
-## Installation
+# 🚀 Installation
 
 Clone the repository:
 
@@ -100,11 +100,13 @@ TCP only:
 sudo python3 main.py --tcp
 ```
 
-> Root privileges are required because the project uses raw sockets.
+> ⚠️ Root privileges are required because the project uses raw sockets.
+>
+> You may have troubles to run it on Windows.
 
 ---
 
-## Supported Protocols
+# 📚 Supported Protocols
 
 | Protocol | Status |
 |----------|:------:|
@@ -120,9 +122,9 @@ sudo python3 main.py --tcp
 
 ---
 
-## Roadmap
+# 🗺️ Roadmap
 
-### v1
+## 🚀 Version 1
 
 - [x] Ethernet parser
 - [x] IPv4 parser
@@ -132,7 +134,7 @@ sudo python3 main.py --tcp
 - [x] DNS statistics
 - [x] IP statistics
 
-### v2
+## ⚙️ Version 2
 
 - [ ] ICMP parser
 - [ ] HTTP parser
@@ -141,7 +143,7 @@ sudo python3 main.py --tcp
 - [ ] Packet filtering
 - [ ] Traffic logging
 
-### v3
+## 🛡️ Version 3
 
 - [ ] Mini IDS
 - [ ] Port scanner
@@ -149,7 +151,7 @@ sudo python3 main.py --tcp
 - [ ] Session reconstruction
 - [ ] Export to PCAP
 
-### Future
+## 🌍 Future
 
 - [ ] Windows compatibility
 - [ ] IPv6 support
@@ -159,45 +161,41 @@ sudo python3 main.py --tcp
 
 ---
 
-## Learning Goals
+# 🎓 Learning Goals
 
 This project was built to explore topics such as:
 
-- Computer Networks
-- Packet Analysis
-- Binary Parsing
-- Raw Sockets
-- Network Protocols
-- Cybersecurity Fundamentals
-- Python Low-Level Networking
+- 🌐 Computer Networks
+- 📦 Packet Analysis
+- ⚙️ Binary Parsing
+- 🔗 Raw Sockets
+- 📡 Network Protocols
+- 🔐 Cybersecurity Fundamentals
+- 🐍 Python Low-Level Networking
 
 ---
 
-## Technologies
+# 🛠️ Technologies
 
-- Python 3
-- Raw Sockets (`AF_PACKET`)
-- `struct`
-- Bitwise Operations
+- 🐍 Python 3
+- 🔗 Raw Sockets (`AF_PACKET`)
+- 📦 `struct`
+- ⚡ Bitwise Operations
 
 ---
 
-## Disclaimer
+# ⚠️ Disclaimer
 
 QIQ-WIRE is an educational project.
 
-It was built to learn how networking protocols work internally and should not be considered a replacement for professional tools like Wireshark or tcpdump.
+It was built to learn how networking protocols work internally and should **not** be considered a replacement for professional tools like Wireshark or tcpdump.
 
 ---
 
-## Contributing
+# 🤝 Contributing
 
 Suggestions, issues and pull requests are always welcome.
 
-If you have ideas for new protocol parsers or improvements, feel free to contribute.
+Have an idea for a new protocol parser or feature? Feel free to open an issue or submit a PR!
 
 ---
-
-## License
-
-MIT License.
