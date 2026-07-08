@@ -1,4 +1,5 @@
-<img width="1536" height="864" alt="QIQ-WIRE" src="https://github.com/user-attachments/assets/2b32068d-ee4b-4687-b848-46d3b12fb52a" />
+<img width="1536" height="864" alt="QIQ-WIRE" src="https://github.com/user-attachments/assets/c50a7ef3-07ed-4aed-b1dc-1172f06a41a7" />
+
 
 # 🛰️ QIQ-WIRE
 
