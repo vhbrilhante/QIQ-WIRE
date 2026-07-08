@@ -1,3 +1,5 @@
+<img width="1536" height="864" alt="QIQ-WIRE" src="https://github.com/user-attachments/assets/2b32068d-ee4b-4687-b848-46d3b12fb52a" />
+
 # 🛰️ QIQ-WIRE
 
 > **A packet sniffer built from scratch to understand how network protocols actually work.**
